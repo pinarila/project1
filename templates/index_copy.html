@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sales Prediction Dashboard</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.5.3/css/bootstrap.min.css"
+    />
+  </head>
+  <body>
+    <div class="container mt-5">
+      <h1 class="text-center">Sales Prediction Dashboard</h1>
+      <div class="mt-4">
+        <h3>Model Evaluation Metrics:</h3>
+        <ul>
+          <li><strong>Mean Squared Error (MSE):</strong> {{ mse }}</li>
+          <li><strong>R-Squared:</strong> {{ r2 }}</li>
+        </ul>
+      </div>
+      <div class="mt-4">
+        <h3>Sales Prediction Plot:</h3>
+        <img
+          src="{{ url_for('static', filename='images/sales_plot.png') }}"
+          alt="Sales Prediction Plot"
+          class="img-fluid"
+        />
+      </div>
+      <div class="mt-5">
+        <h3>Predict Future Sales:</h3>
+        <form action="/predict" method="POST" class="form-inline">
+          <div class="form-group mb-2">
+            <label for="date" class="sr-only">Date</label>
+            <input
+              type="date"
+              class="form-control"
+              id="date"
+              name="date"
+              required
+            />
+          </div>
+          <button type="submit" class="btn btn-primary mb-2 ml-2">
+            Predict
+          </button>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>

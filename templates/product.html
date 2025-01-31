@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aplikasi Simulasi Penjualan</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css"
+    />
+  </head>
+  <body>
+    <header>
+      <h1>Aplikasi Simulasi Penjualan</h1>
+      <div class="user">
+        <a href="#">Admin</a>
+      </div>
+    </header>
+
+    <main>
+      <aside>
+        <ul>
+          <li>
+            <a href="{{ url_for('dashboard') }}"
+              ><i class="fa fa-home"></i> Dashboard</a
+            >
+          </li>
+          <li>
+            <a href="{{ url_for('category') }}"
+              ><i class="fa fa-plus"></i> Tambah Kategori</a
+            >
+          </li>
+          <li>
+            <a href="{{ url_for('product') }}">&#128196; Data Produk</a>
+          </li>
+        </ul>
+      </aside>
+
+      <section>
+        <h2><i class="fa fa-box"></i> Data Produk</h2>
+        <div class="dashboard-header">
+          <p>Masukkan daftar produk anda.</p>
+        </div>
+
+        <!-- Form Pencarian dan Filter Tanggal -->
+        <form
+          action="{{ url_for('product') }}"
+          method="GET"
+          class="search-form"
+        >
+          <input
+            type="text"
+            name="search"
+            placeholder="Cari Produk"
+            value="{{ request.args.get('search', '') }}"
+          />
+          <input
+            type="date"
+            name="filter_date"
+            value="{{ request.args.get('filter_date', '') }}"
+          />
+          <button type="submit" class="btn-search">
+            <i class="fa fa-search"></i>
+          </button>
+          {% if request.args.get('search') or request.args.get('filter_date') %}
+          <a href="{{ url_for('product') }}" class="btn-reset"
+            ><i class="fa fa-times"></i
+          ></a>
+          {% endif %}
+        </form>
+
+        <div class="product-form">
+          <form
+            action="{{ url_for('product') }}"
+            method="POST"
+            id="productForm"
+          >
+            <div class="form-row">
+              <div class="form-group">
+                <label for="productID">ID Produk (Opsional)</label>
+                <input
+                  type="text"
+                  id="productID"
+                  name="productID"
+                  placeholder="Masukkan ID produk (Opsional)"
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="productCategory">Kategori</label>
+                <select id="productCategory" name="productCategory" required>
+                  <option value="" disabled selected>Pilih Kategori</option>
+                  {% for category in categories %}
+                  <option value="{{ category[0] }}">{{ category[1] }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="productName">Nama Produk</label>
+                <select id="productName" name="productName" required>
+                  <option value="" disabled selected>Pilih Nama Produk</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="productQuantity">Jumlah Produk</label>
+                <input
+                  type="number"
+                  id="productQuantity"
+                  name="productQuantity"
+                  placeholder="Masukkan jumlah produk"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="productUnit">Atas Nama</label>
+                <input
+                  type="text"
+                  id="productUnit"
+                  name="productUnit"
+                  placeholder="Masukkan satuan produk"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="productDate">Tanggal Produk</label>
+              <input type="date" id="productDate" name="productDate" required />
+            </div>
+
+            <button type="submit" class="btn-submit">Tambah Produk</button>
+          </form>
+        </div>
+
+        <!-- Daftar produk yang telah ditambahkan -->
+        <div class="product-list">
+          <h3>Pesanan yang Telah Ditambahkan</h3>
+          <ul id="productList">
+            {% for product in products %}
+            <li>
+              <strong>Nama:</strong> {{ product[1] }}
+              <strong>Jumlah:</strong> {{ product[2] }}
+              <strong>Atas Nama:</strong> {{ product[3] }}
+              <strong>Kategori:</strong> {{ product[5] }}
+              <strong>Tanggal:</strong> {{ product[6] }}
+
+              <div class="actions">
+                <button
+                  class="btn-edit"
+                  onclick="editProduct('{{ product[0] }}', '{{ product[1] }}', '{{ product[2] }}', '{{ product[3] }}', '{{ product[4] }}')"
+                >
+                  Edit
+                </button>
+                <button
+                  class="btn-delete"
+                  onclick="deleteProduct('{{ product[0] }}')"
+                >
+                  Hapus
+                </button>
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+
+          <!-- Tampilkan pesan jika tidak ada produk -->
+          {% if products|length == 0 %}
+          <p>Tidak ada produk yang ditambahkan.</p>
+          {% endif %}
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination">
+          <ul>
+            {% if page > 1 %}
+            <li>
+              <a href="{{ url_for('product', page=page-1) }}">Previous</a>
+            </li>
+            {% endif %} {% for p in range(1, total_pages + 1) %}
+            <li>
+              <a
+                href="{{ url_for('product', page=p) }}"
+                class="{{ 'active' if p == page else '' }}"
+                >{{ p }}</a
+              >
+            </li>
+            {% endfor %} {% if page < total_pages %}
+            <li><a href="{{ url_for('product', page=page+1) }}">Next</a></li>
+            {% endif %}
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>&copy; 2024 Aplikasi Simulasi Penjualan. All rights reserved.</p>
+    </footer>
+
+    <script>
+      // Fungsi untuk mengedit produk
+      function editProduct(
+        productId,
+        productName,
+        productQuantity,
+        productUnit,
+        productCategoryId
+      ) {
+        document.getElementById("productID").value = productId;
+        document.getElementById("productName").value = productName;
+        document.getElementById("productQuantity").value = productQuantity;
+        document.getElementById("productUnit").value = productUnit;
+        document.getElementById("productCategory").value = productCategoryId;
+
+        document.getElementById("productForm").action =
+          "/update_product/" + productId;
+        document.querySelector(".btn-submit").textContent = "Update Produk";
+      }
+
+      // Fungsi untuk menghapus produk
+      function deleteProduct(productId) {
+        if (confirm("Apakah Anda yakin ingin menghapus produk ini?")) {
+          window.location.href = "/delete_product/" + productId;
+        }
+      }
+
+      function editProduct(
+        productId,
+        productName,
+        productQuantity,
+        productUnit,
+        productCategoryId,
+        productDate
+      ) {
+        document.getElementById("productID").value = productId;
+        document.getElementById("productName").value = productName;
+        document.getElementById("productQuantity").value = productQuantity;
+        document.getElementById("productUnit").value = productUnit;
+        document.getElementById("productCategory").value = productCategoryId;
+        document.getElementById("productDate").value = productDate;
+
+        document.getElementById("productForm").action =
+          "/update_product/" + productId;
+        document.querySelector(".btn-submit").textContent = "Update Produk";
+      }
+
+      document
+        .getElementById("supplyCategory")
+        .addEventListener("change", function () {
+          const categoryId = this.value;
+
+          fetch(`/get_products/${categoryId}`)
+            .then((response) => response.json())
+            .then((data) => {
+              const productDropdown = document.getElementById("supplyName");
+              productDropdown.innerHTML =
+                '<option value="" disabled selected>Pilih Nama Produk</option>';
+
+              data.forEach((product) => {
+                const option = document.createElement("option");
+                option.value = product[0]; // ID produk
+                option.textContent = product[1]; // Nama produk
+                productDropdown.appendChild(option);
+              });
+            })
+            .catch((error) => console.error("Error:", error));
+        });
+
+      document
+        .getElementById("productCategory")
+        .addEventListener("change", function () {
+          const categoryId = this.value;
+          const productDropdown = document.getElementById("productName");
+
+          // Kosongkan dropdown sebelum diisi ulang
+          productDropdown.innerHTML =
+            '<option value="" disabled selected>Memuat...</option>';
+
+          if (!categoryId) return; // Jika tidak ada kategori yang dipilih, hentikan eksekusi
+
+          fetch(`/get_products/${categoryId}`)
+            .then((response) => response.json())
+            .then((data) => {
+              productDropdown.innerHTML =
+                '<option value="" disabled selected>Pilih Nama Produk</option>';
+
+              if (data.length === 0) {
+                console.log("Tidak ada produk ditemukan untuk kategori ini.");
+                return;
+              }
+
+              data.forEach((product) => {
+                const option = document.createElement("option");
+                option.value = product.id; // ID produk
+                option.textContent = product.name; // Nama produk
+                productDropdown.appendChild(option);
+              });
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+              productDropdown.innerHTML =
+                '<option value="" disabled selected>Error Memuat Produk</option>';
+            });
+        });
+    </script>
+
+    <script defer src="static/script.js"></script>
+  </body>
+</html>
