@@ -4,7 +4,8 @@ import random
 import string
 from math import ceil
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
-
+from datetime import datetime
+import logging
 
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'  # Flash messages need a secret key
@@ -302,20 +303,103 @@ def update_product(product_id):
 
     return redirect(url_for('product'))
 
-# Route to fetch products based on category
-@app.route('/get_products/<category_id>', methods=['GET'])
-def get_products(category_id):
+@app.route('/get_products_by_category/<category_id>', methods=['GET'])
+def get_products_by_category(category_id):
     conn = get_db_connection()
-    cursor = conn.cursor()
+    cursor = conn.cursor(dictionary=True)
 
-    # Ambil semua produk yang memiliki category_id yang sesuai
     cursor.execute('SELECT id, name FROM supply WHERE category = %s', (category_id,))
     products = cursor.fetchall()
+
+    conn.close()
+    return jsonify(products)
+
+@app.route('/display')
+def display():
+    selected_month = get_latest_month()
+    if not selected_month:
+        return "Tidak ada data penjualan tersedia.", 404
+
+    monthly_data = get_monthly_sales(selected_month)
+    available_months = get_available_months()
+
+    # Catat data monthly_data di log
+    logging.debug("monthly_data: %s", monthly_data)
     
+    return render_template(
+        'display.html',
+        monthly_data=monthly_data,
+        selected_month=selected_month,
+        available_months=available_months
+    )
+
+
+def get_latest_month():
+    """Ambil bulan terbaru dari database berdasarkan data terakhir yang masuk."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT MAX(date) FROM demands")
+    latest_date = cursor.fetchone()[0]
     conn.close()
 
-    # Format data agar dapat digunakan dalam JavaScript
-    return jsonify([{"id": product[0], "name": product[1]} for product in products])
+    if latest_date:
+        # Jika latest_date sudah berupa datetime.date, ubah ke string
+        if isinstance(latest_date, datetime):
+            latest_date = latest_date.date()
+        return latest_date.strftime('%Y-%m')
+    return None
+
+def get_available_months():
+    """Ambil daftar bulan unik dari tabel demands di MySQL."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT DISTINCT DATE_FORMAT(date, '%Y-%m') AS month FROM demands ORDER BY month")
+    months = [row[0] for row in cursor.fetchall()]
+    conn.close()
+    return months
+
+def get_monthly_sales(selected_month):
+    """Ambil data penjualan berdasarkan bulan yang dipilih dan bagi dalam 4 minggu."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT name, date, quantity FROM demands WHERE DATE_FORMAT(date, '%Y-%m') = %s", (selected_month,))
+    raw_data = cursor.fetchall()
+    conn.close()
+
+    days_mapping = {'Monday': 0, 'Tuesday': 1, 'Wednesday': 2, 'Thursday': 3, 'Friday': 4, 'Saturday': 5, 'Sunday': 6}
+    sales_data = {}
+
+    for product, date, quantity in raw_data:
+        # Pastikan date adalah objek datetime.date
+        if isinstance(date, str):
+            date = datetime.strptime(date, '%Y-%m-%d').date()
+
+        week_number = (date.day - 1) // 7  # Hitung minggu keberapa dalam bulan
+        if product not in sales_data:
+            sales_data[product] = [[0] * 7 for _ in range(4)]  # 4 minggu, 7 hari
+
+        day_index = days_mapping[date.strftime('%A')]
+        sales_data[product][week_number][day_index] += quantity
+
+    return sales_data
+
+@app.route('/sales')
+def sales():
+    selected_month = request.args.get('month')
+    if not selected_month:
+        selected_month = get_latest_month()
+
+    monthly_data = get_monthly_sales(selected_month)
+    available_months = get_available_months()
+
+    return render_template(
+        'display.html',
+        monthly_data=monthly_data,
+        selected_month=selected_month,
+        available_months=available_months
+    )
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
