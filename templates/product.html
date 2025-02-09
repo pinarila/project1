@@ -52,25 +52,34 @@
           method="GET"
           class="search-form"
         >
-          <input
-            type="text"
-            name="search"
-            placeholder="Cari Produk"
-            value="{{ request.args.get('search', '') }}"
-          />
-          <input
-            type="date"
-            name="filter_date"
-            value="{{ request.args.get('filter_date', '') }}"
-          />
-          <button type="submit" class="btn-search">
-            <i class="fa fa-search"></i>
-          </button>
-          {% if request.args.get('search') or request.args.get('filter_date') %}
-          <a href="{{ url_for('product') }}" class="btn-reset"
-            ><i class="fa fa-times"></i
-          ></a>
-          {% endif %}
+          <div class="left-group">
+            <input
+              type="text"
+              name="search"
+              placeholder="Cari Produk"
+              value="{{ request.args.get('search', '') }}"
+            />
+            <input
+              type="date"
+              name="filter_date"
+              value="{{ request.args.get('filter_date', '') }}"
+            />
+
+            <button type="submit" class="btn-search">
+              <i class="fa fa-search"></i>
+            </button>
+
+            {% if request.args.get('search') or request.args.get('filter_date')
+            %}
+            <a href="{{ url_for('product') }}" class="btn-reset">
+              <i class="fa fa-times"></i>
+            </a>
+            {% endif %}
+          </div>
+
+          <a href="{{ url_for('display') }}" class="btn-submit"
+            >Lihat Data Penjualan</a
+          >
         </form>
 
         <div class="product-form">
@@ -250,62 +259,53 @@
       }
 
       document
-        .getElementById("supplyCategory")
+        .getElementById("productCategory")
         .addEventListener("change", function () {
-          const categoryId = this.value;
+          let categoryId = this.value;
+          let productDropdown = document.getElementById("productName");
 
-          fetch(`/get_products/${categoryId}`)
+          productDropdown.innerHTML =
+            '<option value="" disabled selected>Loading...</option>';
+
+          fetch(`/get_products_by_category/${categoryId}`)
             .then((response) => response.json())
             .then((data) => {
-              const productDropdown = document.getElementById("supplyName");
               productDropdown.innerHTML =
                 '<option value="" disabled selected>Pilih Nama Produk</option>';
-
               data.forEach((product) => {
-                const option = document.createElement("option");
-                option.value = product[0]; // ID produk
-                option.textContent = product[1]; // Nama produk
+                let option = document.createElement("option");
+                option.value = product.id;
+                option.textContent = product.name;
                 productDropdown.appendChild(option);
               });
             })
-            .catch((error) => console.error("Error:", error));
+            .catch((error) => console.error("Error fetching products:", error));
         });
+    </script>
 
+    <script>
       document
         .getElementById("productCategory")
         .addEventListener("change", function () {
-          const categoryId = this.value;
-          const productDropdown = document.getElementById("productName");
+          let categoryId = this.value;
+          let productDropdown = document.getElementById("productName");
 
-          // Kosongkan dropdown sebelum diisi ulang
           productDropdown.innerHTML =
-            '<option value="" disabled selected>Memuat...</option>';
+            '<option value="" disabled selected>Loading...</option>';
 
-          if (!categoryId) return; // Jika tidak ada kategori yang dipilih, hentikan eksekusi
-
-          fetch(`/get_products/${categoryId}`)
+          fetch(`/get_products_by_category/${categoryId}`)
             .then((response) => response.json())
             .then((data) => {
               productDropdown.innerHTML =
                 '<option value="" disabled selected>Pilih Nama Produk</option>';
-
-              if (data.length === 0) {
-                console.log("Tidak ada produk ditemukan untuk kategori ini.");
-                return;
-              }
-
               data.forEach((product) => {
-                const option = document.createElement("option");
-                option.value = product.id; // ID produk
-                option.textContent = product.name; // Nama produk
+                let option = document.createElement("option");
+                option.value = product.id;
+                option.textContent = product.name;
                 productDropdown.appendChild(option);
               });
             })
-            .catch((error) => {
-              console.error("Error:", error);
-              productDropdown.innerHTML =
-                '<option value="" disabled selected>Error Memuat Produk</option>';
-            });
+            .catch((error) => console.error("Error fetching products:", error));
         });
     </script>
 
