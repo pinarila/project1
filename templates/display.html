@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aplikasi Simulasi Penjualan</title>
+    <link rel="stylesheet" href="static/style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css"
+    />
+  </head>
+  <body>
+    <header>
+      <h1>Aplikasi Simulasi Penjualan</h1>
+      <div class="user">
+        <a href="#">Admin</a>
+      </div>
+    </header>
+    <main>
+      <aside>
+        <ul>
+          <li>
+            <a href="{{ url_for('dashboard') }}"
+              ><i class="fa fa-home"></i> Dashboard</a
+            >
+          </li>
+          <li>
+            <a href="{{ url_for('category') }}"
+              ><i class="fa fa-plus"></i> Tambah Kategori</a
+            >
+          </li>
+          <li>
+            <a href="{{ url_for('list_supply') }}">&#128196; Data Produk</a>
+          </li>
+          <li>
+            <a href="{{ url_for('product') }}"
+              ><i class="fa fa-cart-plus"></i> Data Penjualan</a
+            >
+          </li>
+          <li>
+            <a href="#"><i class="fa fa-hashtag"></i> Angka Random</a>
+          </li>
+          <li><a href="#">&#128200; Hasil Prediksi</a></li>
+          <li><a href="#">&#128202; Grafik</a></li>
+          <li><a href="#">&#10067; Bantuan</a></li>
+        </ul>
+      </aside>
+      <section>
+        <h2><i class="fa fa-home"></i> View Page Data Penjualan</h2>
+        <div class="dashboard-header">
+          <p>Berikut merupakan halaman tampilan penjualan anda</p>
+        </div>
+        <div class="filter-container">
+          <form method="GET" action="{{ url_for('sales') }}">
+            <label for="month-select">Pilih Bulan:</label>
+            <select id="month-select" name="month">
+              {% for month_item in available_months %}
+                <option value="{{ month_item.month }}" {% if month_item.month == selected_month %}selected{% endif %}
+                  {% if not month_item.available %}disabled{% endif %}>
+                  {{ month_item.month }}
+                </option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="btn-submit">Tampilkan</button>
+          </form>
+          
+        </div>
+        
+        <div>
+          <a href="{{ url_for('sales') }}" class="btn-submit">PER MINGGU</a>
+
+          <button type="submit" class="btn-submit">PER BULAN</button>
+        </div>
+
+        <table
+          id="sales-table"
+          border="1"
+          style="width: 100%; margin-top: 20px"
+        >
+          <thead>
+            <tr>
+              <th>Produk</th>
+              <th>Senin</th>
+              <th>Selasa</th>
+              <th>Rabu</th>
+              <th>Kamis</th>
+              <th>Jumat</th>
+              <th>Sabtu</th>
+              <th>Minggu</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for product, weeks in monthly_data.items() %}
+            {% for week_index in range(4) %}
+            <tr>
+              {% if week_index == 0 %}
+              <td rowspan="4"><b>{{ product }}</b></td>
+              {% endif %}
+              <td>Minggu {{ week_index + 1 }}</td>
+              {% for day in range(7) %}
+              <td>{{ weeks[week_index][day] }}</td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+    </main>
+    <script>
+      function showSales() {
+        var table = document.getElementById("sales-table");
+        table.style.display = "table"; // Tidak perlu lagi
+      }
+    </script>
+  </body>
+</html>
